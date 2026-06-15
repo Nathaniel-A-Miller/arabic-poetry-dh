@@ -1,4 +1,0 @@
-streamlit
-arabic-reshaper
-python-bidi
-matplotlib
