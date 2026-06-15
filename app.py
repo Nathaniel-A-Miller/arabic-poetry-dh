@@ -1,44 +1,27 @@
-import streamlit as st
-from bidi.algorithm import get_display
-import arabic_reshaper
-import matplotlib.pyplot as plt
+from collections import Counter
+import re
 
-st.set_page_config(layout="centered")
-st.title("Classical Arabic Digital Metaobject Explorer")
+# Simulated OpenITI file data input
+raw_data_stream = """
+دَعْ عَنْكَ لَوْمِي فَإِنَّ اللَّوْمَ إِغْرَاءُ وَدَاوِنِي بِالَّتِي كَانَتْ هِيَ الدَّاءُ
+صَفْرَاءُ لا تَنْزِلُ الأَحْزَانُ سَاحَتَهَا لَوْ مَسَّهَا حَجَرٌ مَسَّتْهُ سَرَّاءُ
+"""
 
-st.markdown("""
-### Chapter Interactive Lab: Khamriyyāt vs. Zuhdiyyāt
-Adjust the metadata filters below to see how removing stop words changes the analytical outcome.
-""")
+# Clean
+text_no_tashkil = re.sub(r"[\u064B-\u0652]", "", raw_data_stream)
+all_tokens = re.findall(r"\b\w+\b", text_no_tashkil)
 
-# Mock data matrix representing the backend state
-data = {
-    "Abu Nuwas": {"خمر": 15, "كأس": 12, "الموت": 1, "الدنيا": 3, "من": 45, "في": 38},
-    "Abu al-Atahiyah": {"خمر": 0, "كأس": 1, "الموت": 20, "الدنيا": 18, "من": 52, "في": 41}
-}
+# 1. Build a completely un-curated, raw frequency glossary
+raw_glossary = Counter(all_tokens)
+print("--- TRUE ABSOLUTE TOP WORDS (Including Grammar) ---")
+for word, count in raw_glossary.most_common(5):
+    print(f"Word: {word} | Occurrences: {count}")
 
-# 1. UI Control Widgets
-exclude_stop = st.checkbox("Apply Metaobject Filter: Exclude Stop Words ('من', 'في')", value=True)
-poet_selection = st.multiselect("Select Authors to Compare:", ["Abu Nuwas", "Abu al-Atahiyah"], default=["Abu Nuwas", "Abu al-Atahiyah"])
+# 2. Apply a standard stop-word exclusion mask
+STOP_WORDS = {"من", "في", "على", "إلى", "و", "أن", "إن", "لا"}
+filtered_tokens = [w for w in all_tokens if w not in STOP_WORDS]
 
-# 2. Process Data dynamically based on widget selections
-words_to_plot = ["خمر", "كأس", "الموت", "الدنيا"] if exclude_stop else ["خمر", "كأس", "الموت", "الدنيا", "من", "في"]
-reshaped_labels = [get_display(arabic_reshaper.reshape(w)) for w in words_to_plot]
-
-fig, ax = plt.subplots(figsize=(8, 4))
-x = range(len(words_to_plot))
-
-# 3. Dynamic Rendering Loop
-if "Abu Nuwas" in poet_selection:
-    counts = [data["Abu Nuwas"].get(w, 0) for w in words_to_plot]
-    ax.bar([i - 0.2 for i in x], counts, width=0.4, label="Abu Nuwas", color="maroon")
-if "Abu al-Atahiyah" in poet_selection:
-    counts = [data["Abu al-Atahiyah"].get(w, 0) for w in words_to_plot]
-    ax.bar([i + 0.2 for i in x], counts, width=0.4, label="Abu al-Atahiyah", color="teal")
-
-ax.set_xticks(x)
-ax.set_xticklabels(reshaped_labels, fontsize=12)
-ax.set_ylabel("Frequencies")
-ax.legend()
-
-st.pyplot(fig)
+filtered_glossary = Counter(filtered_tokens)
+print("\n--- TRUE TOP WORDS (Stop Words Filtered Out) ---")
+for word, count in filtered_glossary.most_common(5):
+    print(f"Word: {word} | Occurrences: {count}")
