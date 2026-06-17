@@ -1,0 +1,4 @@
+matplotlib
+wordcloud
+arabic-reshaper
+python-bidi
